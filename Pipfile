@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+aiogram = "*"
+aioredis = "*"
+environs = "*"
+uvloop = "*"
+ujson = "*"
+asyncpg = "*"
+sqlalchemy = {extras = ["asyncio"], version = "*"}
+redis = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
