@@ -9,6 +9,8 @@ services:
     depends_on:
       - redis
       - postgres
+    volumes:
+      - .:/app
   redis:
     image: redis
     restart: always
