@@ -8,6 +8,7 @@ from aiogram.types import Message, ContentType, ReplyKeyboardRemove
 from tgbot.keyboards import reply_keyboards
 from tgbot.misc import states, messages
 from tgbot.services.database.models import IikoUser
+from tgbot.services.utils import contains_only_russian_letters
 
 
 async def get_contact(message: Message, state: FSMContext):
@@ -36,6 +37,10 @@ async def get_name(message: Message, state: FSMContext):
         await message.answer(messages.name_too_long)
         return
 
+    if not contains_only_russian_letters(name):
+        await message.answer(messages.bad_name)
+        return
+
     await message.answer(messages.birthday_input)
     await states.Registration.next()
     await state.update_data(name=name)
@@ -54,6 +59,7 @@ async def get_birthday(message: Message, state: FSMContext):
         new_iiko_user = IikoUser(
             id=uuid.uuid4(),  # TODO: replace with uuid from iiko API
             name=state_data['name'],
+            phone=state_data['phone'],
             birthday=birthday,
             telegram_id=message.from_id
         )

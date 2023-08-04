@@ -32,3 +32,11 @@ class IikoUser(Base):
         iiko_user = record.scalar()
 
         return iiko_user
+
+    @classmethod
+    async def get_by_telegram_id(cls, session, telegram_id: int):
+        stmt = select(IikoUser).where(IikoUser.telegram_id == telegram_id)
+        record = await session.execute(stmt)
+        iiko_user = record.scalar()
+
+        return iiko_user

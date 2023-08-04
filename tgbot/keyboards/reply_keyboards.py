@@ -13,3 +13,6 @@ main_menu.add(
 
 request_contact = ReplyKeyboardMarkup(resize_keyboard=True)
 request_contact.add(KeyboardButton(reply_commands.share_phone, request_contact=True))
+
+cancel = ReplyKeyboardMarkup(resize_keyboard=True)
+cancel.add(KeyboardButton(reply_commands.cancel))
