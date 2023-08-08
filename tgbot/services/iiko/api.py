@@ -1,10 +1,9 @@
 import datetime
 import logging
-from uuid import UUID
 
 import aiohttp
 
-from tgbot.services.iiko.schemas import *
+from tgbot.services.iiko import schemas
 
 
 class Iiko:
@@ -19,14 +18,40 @@ class Iiko:
             'Content-Type': 'application/json'
         }
 
-    async def create_or_update_customer(self, customer: CreateOrUpdateCustomer):
+    async def get_terminal_groups(
+            self,
+            organization_ids: list[str],
+            include_disabled=False,
+            external_data: list[str]=None
+    ) -> schemas.TerminalGroupsResult:
+        url = 'https://api-ru.iiko.services/api/1/terminal_groups'
+        payload = {
+            'organizationIds': organization_ids,
+            'includeDisabled': include_disabled,
+            'returnExternalData': external_data
+        }
+
+        result = await self._post_request(url, payload)
+        return schemas.TerminalGroupsResult(**result)
+
+    async def get_menu(self, organization_id: str, start_revision: int = None) -> schemas.MenuResult:
+        url = 'https://api-ru.iiko.services/api/1/nomenclature'
+        payload = {
+            'organizationId': organization_id,
+            'startRevision': start_revision
+        }
+
+        result = await self._post_request(url, payload)
+        return schemas.MenuResult(**result)
+
+    async def create_or_update_customer(self, customer: schemas.CreateOrUpdateCustomer) -> str:
         url = 'https://api-ru.iiko.services/api/1/loyalty/iiko/customer/create_or_update'
         payload = customer.model_dump()
 
-        status, result = await self._post_request(url, payload)
+        result = await self._post_request(url, payload)
         return result['id']
 
-    async def get_customer_info(self, get_type: str, get_value: str, organization_id: UUID = None):
+    async def get_customer_info(self, get_type: str, get_value: str, organization_id: str) -> schemas.Customer:
         url = 'https://api-ru.iiko.services/api/1/loyalty/iiko/customer/info'
 
         possible_types = ('id', 'phone', 'email', 'cardTrack', 'cardNumber')
@@ -38,16 +63,16 @@ class Iiko:
             'organizationId': organization_id
         }
 
-        status, result = await self._post_request(url, payload)
-        return Customer(**result)
+        result = await self._post_request(url, payload)
+        return schemas.Customer(**result)
 
     async def get_organizations(
             self,
             extended_info: bool,
             include_disabled: bool,
             external_data: list[str] = None,
-            orgs_ids: list[str | UUID] = None
-    ) -> OrganizationsResult:
+            orgs_ids: list[str] = None
+    ) -> schemas.OrganizationsResult:
         url = 'https://api-ru.iiko.services/api/1/organizations'
         payload = {
             'organizationIds': orgs_ids,
@@ -56,12 +81,12 @@ class Iiko:
             'returnExternalData': external_data
         }
 
-        status, result = await self._post_request(url, payload)
-        return OrganizationsResult(**result)
+        result = await self._post_request(url, payload)
+        return schemas.OrganizationsResult(**result)
 
     async def update_token(self) -> bool:
         new_token = await self.get_new_token()
-        if isinstance(new_token, Error):
+        if isinstance(new_token, schemas.Error):
             logging.error(str(new_token))
             return False
 
@@ -71,14 +96,14 @@ class Iiko:
 
         return True
 
-    async def get_new_token(self) -> AccessTokenResult | Error:
+    async def get_new_token(self) -> schemas.AccessTokenResult | schemas.Error:
         url = 'https://api-ru.iiko.services/api/1/access_token'
         payload = {
             'apiLogin': self.api_login
         }
 
-        status, result = await self._request('POST', url, check_token=False, json=payload)
-        return AccessTokenResult(**result)
+        result = await self._request('POST', url, check_token=False, json=payload)
+        return schemas.AccessTokenResult(**result)
 
     async def _get_request(self, url):
         return await self._request('GET', url)
@@ -93,7 +118,7 @@ class Iiko:
         if check_token and (not self.token or (datetime.datetime.now() - self.last_token_update < datetime.timedelta(minutes=55))):
             result = await self.update_token()
             if not result:
-                raise ApiError('Error during updating token. See error in previous log')
+                raise schemas.ApiError('Error during updating token. See error in previous log')
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
             match method:
@@ -113,9 +138,9 @@ class Iiko:
                     if response.status == 401:
                         await self.update_token()
                     if retires > self.retries_count:
-                        raise ApiError(str(await response.text()))
+                        raise schemas.ApiError(str(await response.text()))
                     await self._request(method, url, check_token, retires + 1, **kwargs)
 
                 json_resp = await response.json()
 
-        return response.status, json_resp
+        return json_resp

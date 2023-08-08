@@ -58,7 +58,7 @@ async def main():
     redis = Redis(host='localhost')
 
     engine = create_async_engine(
-        f'postgresql+asyncpg://{config.database.user}:{config.database.password}@localhost/{config.database.database}',
+        f'postgresql+asyncpg://{config.database.user}:{config.database.password}@127.0.0.1/{config.database.database}',
         future=True
     )
     async_sessionmaker = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession, future=True)
