@@ -8,6 +8,7 @@ from aiogram.types import Message, ContentType, ReplyKeyboardRemove
 from tgbot.keyboards import reply_keyboards
 from tgbot.misc import states, messages
 from tgbot.services.database.models import IikoUser
+from tgbot.services.iiko.schemas import ApiError, CreateOrUpdateCustomer
 from tgbot.services.utils import contains_only_russian_letters
 
 
@@ -16,15 +17,15 @@ async def get_contact(message: Message, state: FSMContext):
 
     db = message.bot.get('database')
     async with db() as session:
-        iiko_user = await IikoUser.get_by_phone(session, phone)
-        if not iiko_user:
-            pass  # TODO: try to get user from iiko API
-
-        if not iiko_user:
+        iiko = message.bot.get('iiko')
+        try:
+            customer = await iiko.get_customer_info('phone', phone)
+        except ApiError:
             await message.answer(messages.name_input, reply_markup=ReplyKeyboardRemove())
             await states.Registration.next()
             await state.update_data(phone=phone)
         else:
+            iiko_user = await IikoUser.create_or_update_from_api(session, customer)
             iiko_user.telegram_id = message.from_id
             await session.commit()
             await state.finish()
@@ -55,9 +56,16 @@ async def get_birthday(message: Message, state: FSMContext):
         await message.answer(messages.bad_birthday)
     else:
         state_data = await state.get_data()
-        # TODO: send new user to iiko API
+        iiko = message.bot.get('iiko')
+        new_customer = CreateOrUpdateCustomer(
+            name=state_data['name'],
+            phone=state_data['phone'],
+            birthday=birthday
+        )
+        new_id = await iiko.create_or_update_customer(new_customer)
+
         new_iiko_user = IikoUser(
-            id=uuid.uuid4(),  # TODO: replace with uuid from iiko API
+            id=new_id,
             name=state_data['name'],
             phone=state_data['phone'],
             birthday=birthday,

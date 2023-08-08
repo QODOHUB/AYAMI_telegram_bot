@@ -1,7 +1,9 @@
 import datetime
+import re
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from pydantic_core.core_schema import FieldValidationInfo
 
 
 class ApiError(Exception):
@@ -36,13 +38,34 @@ class CreateOrUpdateCustomer(BaseModel):
     surname: str = None
     middleName: str = None
     phone: str = None
-    birthday: datetime.date = None
+    birthday: str = None
     email: str = None
     sex: int = 0  # 0 - not specified, 1 - male, 2 - female
     consentStatus: int = 0  # 0 - unknown, 1 - given, 2 - revoked
     shouldReceivePromoActionsInfo: bool = None
     userData: str = None
-    organizationId: str
+    organizationId: str = None
+
+
+    @field_validator('sex', 'consentStatus')
+    @classmethod
+    def check_sex_and_consent(cls, value: int, info: FieldValidationInfo):
+        assert value in (0, 1, 2), f'{info.field_name} must be 0, 1 or 2'
+        return value
+
+    @field_validator('birthday', mode='before')
+    @classmethod
+    def convert_to_str(cls, value):
+        if isinstance(value, (datetime.datetime, datetime.date)):
+            return value.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        elif isinstance(value, str):
+            pattern = r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$'
+            if re.match(pattern, value):
+                return value
+            else:
+                assert False, 'Birthday must match the format "yyyy-MM-dd HH:mm:ss.fff"'
+
+        return value
 
 
 class Customer(BaseModel):

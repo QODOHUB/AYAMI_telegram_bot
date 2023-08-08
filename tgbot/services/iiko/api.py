@@ -7,11 +7,12 @@ from tgbot.services.iiko import schemas
 
 
 class Iiko:
-    def __init__(self, api_login, retries_count: int = 3):
+    def __init__(self, api_login, default_organization_id, retries_count: int = 3):
         self.api_login = api_login
         self.last_token_update = None
         self.token = None
         self.retries_count = retries_count
+        self.default_organization_id = default_organization_id
 
         self.headers = {
             'Authorization': 'Bearer {token}',
@@ -45,13 +46,19 @@ class Iiko:
         return schemas.MenuResult(**result)
 
     async def create_or_update_customer(self, customer: schemas.CreateOrUpdateCustomer) -> str:
+        if customer.organizationId is None:
+            customer.organizationId = self.default_organization_id
+
         url = 'https://api-ru.iiko.services/api/1/loyalty/iiko/customer/create_or_update'
         payload = customer.model_dump()
 
         result = await self._post_request(url, payload)
         return result['id']
 
-    async def get_customer_info(self, get_type: str, get_value: str, organization_id: str) -> schemas.Customer:
+    async def get_customer_info(self, get_type: str, get_value: str, organization_id: str = None) -> schemas.Customer:
+        if organization_id is None:
+            organization_id = self.default_organization_id
+
         url = 'https://api-ru.iiko.services/api/1/loyalty/iiko/customer/info'
 
         possible_types = ('id', 'phone', 'email', 'cardTrack', 'cardNumber')

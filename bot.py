@@ -14,6 +14,7 @@ from tgbot import handlers
 from tgbot import filters
 from tgbot import middlewares
 from tgbot.services.database.base import Base
+from tgbot.services.iiko.api import Iiko
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +64,12 @@ async def main():
     )
     async_sessionmaker = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession, future=True)
 
+    iiko = Iiko(config.iiko.login, config.iiko.default_organization_id)
+
     bot['config'] = config
     bot['redis'] = redis
     bot['database'] = async_sessionmaker
+    bot['iiko'] = iiko
 
     register_all_middlewares(dp, config)
     register_all_filters(dp)

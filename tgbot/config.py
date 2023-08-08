@@ -23,10 +23,17 @@ class Miscellaneous:
 
 
 @dataclass
+class IikoConfig:
+    login: str
+    default_organization_id: str
+
+
+@dataclass
 class Config:
     bot: TelegramBot
     database: DatabaseConfig
     misc: Miscellaneous
+    iiko: IikoConfig
 
 
 def load_config(path: str = None):
@@ -45,6 +52,11 @@ def load_config(path: str = None):
             database=env.str('POSTGRES_DB')
         ),
         misc=Miscellaneous(
-            feedback_url=env.str('FEEDBACK_URL')
+            feedback_url=env.str('FEEDBACK_URL'),
+
+        ),
+        iiko=IikoConfig(
+            login=env.str('IIKO_LOGIN'),
+            default_organization_id=env.str('DEFAULT_ORGANIZATION'),
         )
     )
