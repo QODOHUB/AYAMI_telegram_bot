@@ -19,11 +19,22 @@ class Iiko:
             'Content-Type': 'application/json'
         }
 
+    async def get_available_tables(self, terminal_group_ids: list[str], return_schema: bool, revision=None) -> schemas.TablesResult:
+        url = 'https://api-ru.iiko.services/api/1/reserve/available_restaurant_sections'
+        payload = {
+            'terminalGroupIds': terminal_group_ids,
+            'returnSchema': return_schema,
+            'revision': revision
+        }
+
+        result = await self._post_request(url, payload)
+        return schemas.TablesResult(**result)
+
     async def get_terminal_groups(
             self,
             organization_ids: list[str],
             include_disabled=False,
-            external_data: list[str]=None
+            external_data: list[str] = None
     ) -> schemas.TerminalGroupsResult:
         url = 'https://api-ru.iiko.services/api/1/terminal_groups'
         payload = {
@@ -35,7 +46,10 @@ class Iiko:
         result = await self._post_request(url, payload)
         return schemas.TerminalGroupsResult(**result)
 
-    async def get_menu(self, organization_id: str, start_revision: int = None) -> schemas.MenuResult:
+    async def get_menu(self, organization_id: str = None, start_revision: int = None) -> schemas.MenuResult:
+        if organization_id is None:
+            organization_id = self.default_organization_id
+
         url = 'https://api-ru.iiko.services/api/1/nomenclature'
         payload = {
             'organizationId': organization_id,
@@ -145,8 +159,12 @@ class Iiko:
                     if response.status == 401:
                         await self.update_token()
                     if retires > self.retries_count:
-                        raise schemas.ApiError(str(await response.text()))
-                    await self._request(method, url, check_token, retires + 1, **kwargs)
+                        raise schemas.ApiError(await response.text())
+
+                    if response.status in (408, 500):
+                        await self._request(method, url, check_token, retires + 1, **kwargs)
+                    else:
+                        raise schemas.ApiError(await response.text())
 
                 json_resp = await response.json()
 

@@ -24,6 +24,29 @@ class GuestCategory(BaseModel):
     isDefaultForNewGuests: bool
 
 
+class Table(BaseModel):
+    id: UUID
+    number: int
+    name: str
+    seatingCapacity: int
+    revision: int
+    isDeleted: bool
+
+
+class RestaurantSection(BaseModel):
+    id: UUID
+    terminalGroupId: UUID
+    name: str
+    tables: list[Table]
+    # schema: ...  # Too big object
+
+
+class TablesResult(BaseModel):
+    correlationId: UUID
+    revision: int
+    restaurantSections: list[RestaurantSection]
+
+
 class GuestWallet(BaseModel):
     id: UUID
     name: str
@@ -32,20 +55,19 @@ class GuestWallet(BaseModel):
 
 
 class CreateOrUpdateCustomer(BaseModel):
-    id: str = None
-    referrerId: UUID = None
-    name: str = None
-    surname: str = None
-    middleName: str = None
-    phone: str = None
-    birthday: str = None
-    email: str = None
+    id: str | None = None
+    referrerId: str | None = None
+    name: str | None = None
+    surname: str | None = None
+    middleName: str | None = None
+    phone: str | None = None
+    birthday: str | None = None
+    email: str | None = None
     sex: int = 0  # 0 - not specified, 1 - male, 2 - female
     consentStatus: int = 0  # 0 - unknown, 1 - given, 2 - revoked
-    shouldReceivePromoActionsInfo: bool = None
-    userData: str = None
-    organizationId: str = None
-
+    shouldReceivePromoActionsInfo: bool | None = None
+    userData: str | None = None
+    organizationId: str | None = None
 
     @field_validator('sex', 'consentStatus')
     @classmethod
@@ -122,16 +144,16 @@ class ExtendedOrganization(Organization):
     marketingSourceRequiredInDelivery: bool | None
     defaultDeliveryCityId: UUID | None
     deliveryCityIds: list[UUID] | None
-    deliveryServiceType: str | None  # "CourierOnly" "SelfServiceOnly" "CourierAndSelfService"
+    deliveryServiceType: str | None  # “CourierOnly” or “SelfServiceOnly” or “CourierAndSelfService”
     defaultCallCenterPaymentTypeId: UUID | None
     orderItemCommentEnabled: bool | None
     inn: str | None
-    addressFormatType: str  # "Legacy" "City" "International" "IntNoPostcode"
+    addressFormatType: str  # “Legacy” or “City” or “International” or “IntNoPostcode”
     isConfirmationEnabled: bool | None
     confirmAllowedIntervalInMinutes: int | None
     isCloud: bool
     isAnonymousGuestsAllowed: bool
-    addressLookup: list[str]  # Items Enum: "DaData" "GetAddress"
+    addressLookup: list[str]  # Items Enum: “DaData“ “GetAddress“
 
 
 class TerminalGroupItem(BaseModel):
@@ -225,7 +247,7 @@ class Product(BaseModel):
     groupId: UUID | None
     productCategoryId: UUID | None
     type: str | None  # dish | good | modifier
-    orderItemType: str  # "Product" "Compound"
+    orderItemType: str  # “Product”, “Compound”
     modifierSchemaId: UUID | None
     modifierSchemaName: str | None
     splittable: bool
