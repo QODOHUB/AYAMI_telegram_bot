@@ -2,7 +2,7 @@ from aiogram import Dispatcher
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message
 
-from tgbot.keyboards import inline_keyboards
+from tgbot.keyboards import inline_keyboards, reply_keyboards
 from tgbot.misc import reply_commands, messages
 from tgbot.services.database.models import IikoUser
 
@@ -33,7 +33,7 @@ async def send_reserve_table(message: Message):
 
 
 async def send_order_food(message: Message):
-    await message.answer('В разработке')
+    await message.answer(messages.order_food, reply_markup=reply_keyboards.order)
 
 
 def register_main_menu(dp: Dispatcher):

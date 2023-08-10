@@ -54,3 +54,27 @@ profile = (
     'Ваш номер: {phone}\n'
     'Бонусный баланс: {bonus_balance}'
 )
+
+order_food = (
+    'Заказ еды'
+)
+
+groups_choose = (
+    'Выберите категорию'
+)
+
+subgroup_choose = (
+    'Категория: {group}\n\n'
+    'Выберите под-категорию:'
+)
+
+product_choose = (
+    'Категория: {group}\n\n'
+    'Выберите продукт:'
+)
+
+product = (
+    'Название: {name}\n\n'
+    'Цена: {price}₽\n\n\n'
+    'Описание: {description}'
+)

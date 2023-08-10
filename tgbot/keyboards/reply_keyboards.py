@@ -16,3 +16,10 @@ request_contact.add(KeyboardButton(reply_commands.share_phone, request_contact=T
 
 cancel = ReplyKeyboardMarkup(resize_keyboard=True)
 cancel.add(KeyboardButton(reply_commands.cancel))
+
+order = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+order.add(
+    KeyboardButton(reply_commands.open_menu),
+    KeyboardButton(reply_commands.cart),
+    KeyboardButton(reply_commands.main_menu)
+)
