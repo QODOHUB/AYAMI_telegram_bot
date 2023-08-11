@@ -31,7 +31,11 @@ async def show_categories(call: CallbackQuery):
         await update_menu_from_api(session, iiko, redis)
         main_groups = await Group.get_main_groups(session)
 
-    await call.message.edit_text(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))
+    if call.message.photo:
+        await call.message.delete()
+        await call.message.answer(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))
+    else:
+        await call.message.edit_text(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))
 
 
 async def send_cart(message: Message):

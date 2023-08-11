@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from tgbot.misc import callbacks
-from tgbot.services.database.models import Group, Product
+from tgbot.services.database.models import Group, Product, Cart
 
 
 def get_feedback_keyboard(feedback_url: str):
@@ -28,13 +28,32 @@ def get_groups_keyboard(groups: list[Group], back=False):
     return keyboard
 
 
-def get_products_keyboard(products: list[Product]):
+def get_products_keyboard(products: list[Product], back_group_id):
     keyboard = InlineKeyboardMarkup(row_width=1)
 
     for product in products:
         keyboard.add(
             InlineKeyboardButton(product.name, callback_data=callbacks.product.new(id=product.id))
         )
+
+    if back_group_id:
+        keyboard.add(
+            InlineKeyboardButton('Назад', callback_data=callbacks.group.new(id=back_group_id))
+        )
+    else:
+        keyboard.add(
+            InlineKeyboardButton('Назад', callback_data='groups')
+        )
+
+    return keyboard
+
+
+def get_product_keyboard(product: Product, cart: Cart):
+    keyboard = InlineKeyboardMarkup(row_width=1)
+
+    keyboard.add(
+        InlineKeyboardButton('Назад', callback_data=callbacks.group.new(id=product.group_id))
+    )
 
     return keyboard
 

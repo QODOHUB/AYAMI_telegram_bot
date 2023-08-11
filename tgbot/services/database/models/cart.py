@@ -15,4 +15,4 @@ class Cart(Base):
     product_id = Column(UUID, ForeignKey('product.id'))
     quantity = Column(Integer, default=1)
 
-    iiko_user = relationship('IikoUser')
+    iiko_user = relationship('IikoUser', backref='cart')

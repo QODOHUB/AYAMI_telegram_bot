@@ -1,5 +1,5 @@
 from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Date, Integer, select, Double
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.expression import text
 
 from tgbot.services.database.base import Base
@@ -24,7 +24,7 @@ class IikoUser(Base):
     bonus_balance = Column(Double, default=0)
 
     referrer = relationship('IikoUser')
-    telegram_user = relationship('TelegramUser', backref='iiko_user', uselist=False)
+    telegram_user = relationship('TelegramUser', backref=backref('iiko_user', uselist=False), uselist=False)
 
     @classmethod
     async def get_by_phone(cls, session, phone):
