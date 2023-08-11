@@ -33,7 +33,6 @@ async def show_subgroup_or_products(call: CallbackQuery, callback_data: dict):
                     await call.message.answer(text, reply_markup=keyboard)
             else:
                 if group.image_link:
-                    await call.message.delete()
                     photo_id = await redis.get(group.image_link)
                     photo = photo_id.decode() if photo_id else InputFile.from_url(group.image_link)
                     msg = await call.message.answer_photo(
@@ -41,6 +40,7 @@ async def show_subgroup_or_products(call: CallbackQuery, callback_data: dict):
                         caption=text,
                         reply_markup=keyboard
                     )
+                    await call.message.delete()
                     if not photo_id:
                         await redis.set(group.image_link, msg.photo[-1].file_id)
                 else:
@@ -65,7 +65,6 @@ async def show_subgroup_or_products(call: CallbackQuery, callback_data: dict):
                     await call.message.answer(text, reply_markup=keyboard)
             else:
                 if group.image_link:
-                    await call.message.delete()
                     photo_id = await redis.get(group.image_link)
                     photo = photo_id.decode() if photo_id else InputFile.from_url(group.image_link)
                     msg = await call.message.answer_photo(
@@ -73,6 +72,7 @@ async def show_subgroup_or_products(call: CallbackQuery, callback_data: dict):
                         caption=text,
                         reply_markup=keyboard
                     )
+                    await call.message.delete()
                     if not photo_id:
                         await redis.set(group.image_link, msg.photo[-1].file_id)
                 else:
@@ -108,7 +108,6 @@ async def show_product(call: CallbackQuery, callback_data: dict):
                 await call.message.answer(text, reply_markup=keyboard)
         else:
             if product.image_link:
-                await call.message.delete()
                 photo_id = await redis.get(product.image_link)
                 photo = photo_id.decode() if photo_id else InputFile.from_url(product.image_link)
                 msg = await call.message.answer_photo(
@@ -116,6 +115,7 @@ async def show_product(call: CallbackQuery, callback_data: dict):
                     caption=text,
                     reply_markup=keyboard
                 )
+                await call.message.delete()
                 if not photo_id:
                     await redis.set(product.image_link, msg.photo[-1].file_id)
             else:

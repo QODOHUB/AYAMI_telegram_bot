@@ -33,8 +33,8 @@ async def show_categories(call: CallbackQuery):
         main_groups = await Group.get_main_groups(session)
 
     if call.message.photo:
-        await call.message.delete()
         await call.message.answer(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))
+        await call.message.delete()
     else:
         await call.message.edit_text(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))
 
