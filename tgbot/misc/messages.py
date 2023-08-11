@@ -78,3 +78,7 @@ product = (
     'Цена: {price}₽\n\n\n'
     'Описание: {description}'
 )
+
+empty_cart = (
+    'Корзина пуста'
+)

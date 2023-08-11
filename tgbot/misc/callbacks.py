@@ -9,5 +9,5 @@ group = CallbackData('grp', 'id')
 # actions: 'add', 'del', '+', '-'
 product = CallbackData('prd', 'action', 'id')
 
-# actions: 'add', 'del', '+', '-', 'pay'
+# actions: 'del', '+', '-', 'pay', 'show'
 cart = CallbackData('crt', 'action', 'id')
