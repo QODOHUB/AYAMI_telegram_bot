@@ -6,4 +6,8 @@ profile = CallbackData('profile', 'action')
 
 group = CallbackData('grp', 'id')
 
-product = CallbackData('prd', 'id')
+# actions: 'add', 'del', '+', '-'
+product = CallbackData('prd', 'action', 'id')
+
+# actions: 'add', 'del', '+', '-', 'pay'
+cart = CallbackData('crt', 'action', 'id')

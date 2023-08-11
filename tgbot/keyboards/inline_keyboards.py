@@ -33,7 +33,7 @@ def get_products_keyboard(products: list[Product], back_group_id):
 
     for product in products:
         keyboard.add(
-            InlineKeyboardButton(product.name, callback_data=callbacks.product.new(id=product.id))
+            InlineKeyboardButton(product.name, callback_data=callbacks.product.new(id=product.id, action='show'))
         )
 
     if back_group_id:
@@ -48,8 +48,24 @@ def get_products_keyboard(products: list[Product], back_group_id):
     return keyboard
 
 
-def get_product_keyboard(product: Product, cart: Cart):
+def get_product_keyboard(product: Product, cart_product: Cart | None):
     keyboard = InlineKeyboardMarkup(row_width=1)
+
+    if cart_product:
+        keyboard.add(
+            InlineKeyboardButton(f'{product.price} * {cart_product.quantity} = {product.price * cart_product.quantity}₽',
+                                 callback_data='pass')
+        )
+        keyboard.row(
+            InlineKeyboardButton('🗑️', callback_data=callbacks.product.new(id=product.id, action='del')),
+            InlineKeyboardButton('➖', callback_data=callbacks.product.new(id=product.id, action='-')),
+            InlineKeyboardButton(str(cart_product.quantity), callback_data='pass'),
+            InlineKeyboardButton('➕', callback_data=callbacks.product.new(id=product.id, action='+'))
+        )
+    else:
+        keyboard.add(
+            InlineKeyboardButton('Добавить в корзину', callback_data=callbacks.product.new(id=product.id, action='add'))
+        )
 
     keyboard.add(
         InlineKeyboardButton('Назад', callback_data=callbacks.group.new(id=product.group_id))

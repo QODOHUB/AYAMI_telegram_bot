@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer
+from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
@@ -15,4 +15,12 @@ class Cart(Base):
     product_id = Column(UUID, ForeignKey('product.id'))
     quantity = Column(Integer, default=1)
 
-    iiko_user = relationship('IikoUser', backref='cart')
+    product = relationship('Product')
+    iiko_user = relationship('IikoUser', backref='cart_products')
+
+    @classmethod
+    async def get_user_product(cls, session, user_id, product_id):
+        stmt = select(Cart).where(Cart.iiko_user_id == user_id, Cart.product_id == product_id)
+        record = await session.execute(stmt)
+
+        return record.scalar()
