@@ -17,8 +17,8 @@ async def send_categories(message: Message):
     redis = message.bot.get('redis')
 
     async with db() as session:
-        await update_menu_from_api(session, iiko, redis)
-        main_groups = await Group.get_main_groups(session)
+        revision = await update_menu_from_api(session, iiko, redis)
+        main_groups = await Group.get_main_groups(session, revision)
 
     await message.answer(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))
 
@@ -29,8 +29,8 @@ async def show_categories(call: CallbackQuery):
     redis = call.bot.get('redis')
 
     async with db() as session:
-        await update_menu_from_api(session, iiko, redis)
-        main_groups = await Group.get_main_groups(session)
+        revision = await update_menu_from_api(session, iiko, redis)
+        main_groups = await Group.get_main_groups(session, revision)
 
     if call.message.photo:
         await call.message.answer(messages.groups_choose, reply_markup=inline_keyboards.get_groups_keyboard(main_groups))

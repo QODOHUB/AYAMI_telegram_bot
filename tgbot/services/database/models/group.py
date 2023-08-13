@@ -20,8 +20,8 @@ class Group(Base):
     parent = relationship('Group', lazy='selectin', backref='children', remote_side='Group.id')
 
     @classmethod
-    async def get_main_groups(cls, session):
-        stmt = select(Group).where(Group.parent_id == None)
+    async def get_main_groups(cls, session, revision: int):
+        stmt = select(Group).where(Group.parent_id == None, Group.revision == revision)
         records = await session.execute(stmt)
 
         return records.scalars().all()

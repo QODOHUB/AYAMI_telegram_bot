@@ -17,7 +17,7 @@ async def update_menu_from_api(session, iiko, redis):
 
     menu = await iiko.get_menu(start_revision=revision)
     if not menu.products:
-        return
+        return revision
 
     added_groups = set()
     for group in menu.groups:
@@ -77,6 +77,7 @@ async def update_menu_from_api(session, iiko, redis):
 
     await session.commit()
     await redis.set('revision', menu.revision)
+    return menu.revision
 
 
 async def update_message_content(call, redis, text, keyboard, image_link):
