@@ -156,15 +156,15 @@ class Iiko:
 
             async with request(url, **kwargs) as response:
                 if not response.ok:
-                    if response.status == 401:
-                        await self.update_token()
                     if retires > self.retries_count:
-                        raise schemas.ApiError(await response.text())
+                        raise schemas.ApiError(f'{response.status}, {await response.text()}')
 
-                    if response.status in (408, 500):
+                    if response.status in (401, 408, 500):
+                        if response.status == 401:
+                            await self.update_token()
                         await self._request(method, url, check_token, retires + 1, **kwargs)
                     else:
-                        raise schemas.ApiError(await response.text())
+                        raise schemas.ApiError(f'{response.status}, {await response.text()}')
 
                 json_resp = await response.json()
 
