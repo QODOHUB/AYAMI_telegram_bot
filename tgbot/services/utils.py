@@ -1,6 +1,8 @@
 import re
 from pprint import pprint
 
+from aiogram.types import InputFile, InputMediaPhoto
+
 from tgbot.services.database.models.group import Group
 from tgbot.services.database.models.product import Product
 
@@ -75,3 +77,26 @@ async def update_menu_from_api(session, iiko, redis):
 
     await session.commit()
     await redis.set('revision', menu.revision)
+
+
+async def update_message_content(call, redis, text, keyboard, image_link):
+    if call.message.photo:
+        if image_link:
+            photo_id = await redis.get(image_link)
+            photo = photo_id.decode() if photo_id else InputFile.from_url(image_link)
+            msg = await call.message.edit_media(InputMediaPhoto(photo, caption=text), reply_markup=keyboard)
+            if not photo_id:
+                await redis.set(image_link, msg.photo[-1].file_id)
+        else:
+            await call.message.delete()
+            await call.message.answer(text, reply_markup=keyboard)
+    else:
+        if image_link:
+            photo_id = await redis.get(image_link)
+            photo = photo_id.decode() if photo_id else InputFile.from_url(image_link)
+            msg = await call.message.answer_photo(photo, caption=text, reply_markup=keyboard)
+            await call.message.delete()
+            if not photo_id:
+                await redis.set(image_link, msg.photo[-1].file_id)
+        else:
+            await call.message.edit_text(text, reply_markup=keyboard)
