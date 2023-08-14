@@ -41,22 +41,31 @@ async def show_categories(call: CallbackQuery):
 
 async def send_cart(message: Message):
     db = message.bot.get('database')
+    redis = message.bot.get('redis')
+    iiko = message.bot.get('iiko')
     async with db() as session:
+        revision = await update_menu_from_api(session, iiko, redis)
         tg_user = await session.get(TelegramUser, message.from_id)
         await session.refresh(tg_user, ['iiko_user'])
         await session.refresh(tg_user.iiko_user, ['cart_products'])
+        total_sum = 0
+        for ind, cart_product in enumerate(tg_user.iiko_user.cart_products):
+            await session.refresh(cart_product, ['product'])
+            if cart_product.product.revision != revision:
+                await session.delete(cart_product)
+                tg_user.iiko_user.cart_products.remove(cart_product)
+                continue
+
+            total_sum += cart_product.quantity * cart_product.product.price
 
         if not tg_user.iiko_user.cart_products:
             await message.answer(messages.empty_cart, reply_markup=inline_keyboards.open_menu)
             return
 
-        total_sum = 0
-        for ind, cart_product in enumerate(tg_user.iiko_user.cart_products):
-            await session.refresh(cart_product, ['product'])
-            if ind == 0:
-                product_num = 1
-                current_product = cart_product
-            total_sum += cart_product.quantity * cart_product.product.price
+        await session.commit()
+        await session.refresh(tg_user.iiko_user, ['cart_products'])
+
+        current_product = tg_user.iiko_user.cart_products[0]
 
         text = messages.product.format(
             name=current_product.product.name,
@@ -64,7 +73,7 @@ async def send_cart(message: Message):
             description=current_product.product.description
         )
         keyboard = inline_keyboards.get_cart_keyboard(tg_user.iiko_user.cart_products, current_product.product,
-                                                      product_num, total_sum)
+                                                      1, total_sum)
 
         if current_product.product.image_link:
             redis = message.bot.get('redis')

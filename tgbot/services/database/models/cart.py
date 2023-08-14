@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer, select
+from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer, select, delete
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
@@ -17,6 +17,11 @@ class Cart(Base):
 
     product = relationship('Product')
     iiko_user = relationship('IikoUser', backref='cart_products')
+
+    @classmethod
+    async def clear_old_products(cls, session, user_id, revision):
+        stmt = delete(Cart).where(Cart.iiko_user_id == user_id, Cart.product.revision != revision)
+        await session.execute(stmt)
 
     @classmethod
     async def get_user_product(cls, session, user_id, product_id):
