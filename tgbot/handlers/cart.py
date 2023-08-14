@@ -11,6 +11,9 @@ async def show_cart_product(call: CallbackQuery, callback_data: dict):
     db = call.bot.get('database')
     async with db() as session:
         current_product = await session.get(Cart, int(callback_data['id']))
+        if not current_product:
+            await call.answer(messages.request_new_cart, show_alert=True)
+            return
         await session.refresh(current_product, ['iiko_user'])
         await session.refresh(current_product.iiko_user, ['cart_products'])
 
@@ -40,6 +43,9 @@ async def add_quantity(call: CallbackQuery, callback_data: dict):
 
     async with db() as session:
         cart_product = await session.get(Cart, int(callback_data['id']))
+        if not cart_product:
+            await call.answer(messages.request_new_cart, show_alert=True)
+            return
         cart_product.quantity += 1
         await session.refresh(cart_product, ['iiko_user'])
         iiko_user = cart_product.iiko_user
@@ -69,6 +75,9 @@ async def reduce_quantity(call: CallbackQuery, callback_data: dict):
 
     async with db() as session:
         cart_product = await session.get(Cart, int(callback_data['id']))
+        if not cart_product:
+            await call.answer(messages.request_new_cart, show_alert=True)
+            return
         cart_product.quantity -= 1
         await session.refresh(cart_product, ['iiko_user'])
         iiko_user = cart_product.iiko_user
@@ -110,6 +119,9 @@ async def del_product(call: CallbackQuery, callback_data: dict):
 
     async with db() as session:
         cart_product = await session.get(Cart, int(callback_data['id']))
+        if not cart_product:
+            await call.answer(messages.request_new_cart, show_alert=True)
+            return
         await session.refresh(cart_product, ['iiko_user'])
         await session.refresh(cart_product.iiko_user, ['cart_products'])
         await session.delete(cart_product)

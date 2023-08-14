@@ -1,6 +1,7 @@
 from aiogram import Dispatcher
 from aiogram.dispatcher.handler import CancelHandler
 from aiogram.types import CallbackQuery
+from aiogram.utils.exceptions import MessageNotModified
 
 from tgbot.keyboards import inline_keyboards
 from tgbot.misc import messages, callbacks
@@ -63,14 +64,17 @@ async def add_to_cart(call: CallbackQuery, callback_data: dict):
         tg_user = await session.get(TelegramUser, call.from_user.id)
         product = await session.get(Product, callback_data['id'])
         await session.refresh(tg_user, ['iiko_user'])
-        new_cart_product = Cart(
-            iiko_user_id=tg_user.iiko_user.id,
-            product_id=callback_data['id']
-        )
-        session.add(new_cart_product)
-        await session.commit()
+        cart_product = await Cart.get_user_product(session, tg_user.iiko_user.id, callback_data['id'])
+        if not cart_product:
+            await session.refresh(tg_user, ['iiko_user'])
+            cart_product = Cart(
+                iiko_user_id=tg_user.iiko_user.id,
+                product_id=callback_data['id']
+            )
+            session.add(cart_product)
+            await session.commit()
 
-    await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, new_cart_product))
+    await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, cart_product))
     await call.answer()
 
 
@@ -112,7 +116,11 @@ async def add_quantity(call: CallbackQuery, callback_data: dict):
         cart_product.quantity += 1
         await session.commit()
 
-    await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, cart_product))
+    try:
+        await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, cart_product))
+    except MessageNotModified:
+        pass
+
     await call.answer()
 
 
@@ -126,7 +134,11 @@ async def reduce_quantity(call: CallbackQuery, callback_data: dict):
             cart_product = None
         await session.commit()
 
-    await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, cart_product))
+    try:
+        await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, cart_product))
+    except MessageNotModified:
+        pass
+
     await call.answer()
 
 

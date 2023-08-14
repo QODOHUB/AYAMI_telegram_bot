@@ -63,7 +63,6 @@ async def send_cart(message: Message):
             return
 
         await session.commit()
-        await session.refresh(tg_user.iiko_user, ['cart_products'])
 
         current_product = tg_user.iiko_user.cart_products[0]
 
