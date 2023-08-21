@@ -1,7 +1,7 @@
 import datetime
 
 from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer, select, delete
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.expression import text
 
 from tgbot.services.database.base import Base
@@ -16,7 +16,7 @@ class Cart(Base):
     quantity = Column(Integer, default=1)
 
     product = relationship('Product')
-    iiko_user = relationship('IikoUser', backref='cart_products')
+    iiko_user = relationship('IikoUser', backref=backref('cart_products', order_by='desc(Cart.id)'))
 
     @classmethod
     async def clear_old_products(cls, session, user_id, revision):

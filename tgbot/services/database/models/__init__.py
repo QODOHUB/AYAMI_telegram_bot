@@ -4,3 +4,4 @@ from .cart import Cart
 from .order import OrderProduct, Order
 from .group import Group
 from .product import Product
+from .organization import Organization

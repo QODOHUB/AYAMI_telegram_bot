@@ -10,6 +10,264 @@ class ApiError(Exception):
     pass
 
 
+class Coordinates(BaseModel):
+    latitude: float
+    longitude: float
+
+
+class Street(BaseModel):
+    classifierId: str | None = None
+    id: str | None = None
+    name: str | None = None
+    city: str | None = None
+
+
+class Address(BaseModel):
+    street: Street
+    index: str | None = None
+    house: str
+    building: str | None = None
+    flat: str | None = None
+    entrance: str | None = None
+    floor: str | None = None
+    doorphone: str | None = None
+    regionId: str | None = None
+
+
+class DeliveryPoint(BaseModel):
+    coordinates: Coordinates | None = None
+    address: Address | None = None
+    externalCartographyId: str | None = None
+    comment: str | None = None
+
+
+class OrderCustomer(BaseModel):
+    id: str | None = None
+    name: str | None = None
+    surname: str | None = None
+    comment: str | None = None
+    birthday: str | None = None
+    email: str | None = None
+    shouldReceiveOrderStatusNotifications: bool | None = None
+    gender: str | None = None
+    type: str
+
+
+class OrderGuests(BaseModel):
+    count: int
+    splitBetweenPersons: bool | None = None
+
+
+class OrderItem(BaseModel):
+    productId: str
+    modifiers: None = None  # Not used
+    price: float | None = None
+    positionId: str | None = None
+    type: str  # Product | Compound
+    amount: float
+    productSizeId: str | None = None
+    comboInformation: None = None  # Not used
+    comment: str | None = None
+
+
+class OrderPayment(BaseModel):
+    paymentTypeKind: str | None = None  # Cash, Card, IikoCard, External
+    sum: float
+    paymentTypeId: str
+    isProcessedExternally: bool | None = None
+    paymentAdditionalData: None = None
+    isFiscalizedExternally: bool | None = None
+    isPrepay: bool | None = None
+
+
+class Order(BaseModel):
+    menuId: str | None = None
+    id: str | None = None
+    externalNumber: int | None = None
+    completeBefore: str | None = None
+    phone: str
+    orderTypeId: str | None = None
+    orderServiceType: str | None = None
+    deliveryPoint: DeliveryPoint | None = None
+    comment: str | None = None
+    customer: OrderCustomer | None = None
+    guests: OrderGuests | None = None
+    operatorId: str | None = None
+    items: list[OrderItem]
+    combos: None = None  # Not used
+    payments: list[OrderPayment]
+    tips: None = None  # Not used
+    sourceKey: str | None = None
+    discountsInfo: None = None  # Not used
+    loyaltyInfo: None = None  # Not used
+    chequeAdditionalInfo: None = None  # Not used
+    externalData: None = None  # Not used
+
+
+class DeliveryCreate(BaseModel):
+    organizationId: str
+    terminalGroupId: str | None = None
+    createOrderSettings: None = None  # not used
+    order: Order
+
+
+class DeliveryAddress(BaseModel):
+    city: str | None = None
+    streetName: str | None = None
+    streetId: str | None = None
+    house: str | None = None
+    building: str | None = None
+    index: str | None = None
+
+
+class RestrictionsOrderItemModifier(BaseModel):
+    id: str
+    product: str | None = None
+    amount: float
+
+
+class RestrictionsOrderItem(BaseModel):
+    id: str
+    product: str
+    amount: float
+    modifiers: list[RestrictionsOrderItemModifier] | None = None
+
+
+class SuitableTerminalGroupsRequest(BaseModel):
+    organizationIds: list[str]
+    deliveryAddress: DeliveryAddress | None = None
+    orderLocation: Coordinates | None = None
+    orderItems: list[RestrictionsOrderItem] | None = None
+    isCourierDelivery: bool
+    deliveryDate: str | None = None
+    deliverySum: float | None = None
+    discountSum: float | None = None
+
+
+class AllowedItem(BaseModel):
+    terminalGroupId: str
+    organizationId: str
+    deliveryDurationInMinutes: int
+    zone: str | None = None
+    deliveryServiceProductId: str | None = None
+
+
+class RejectItemData(BaseModel):
+    dateFrom: str | None = None
+    dateTo: str | None = None
+    allowedWeekDays: list[str] | None = None
+    minSum: float | None = None
+
+
+class RejectedItem(BaseModel):
+    terminalGroupId: str | None = None
+    organizationId: str | None = None
+    zone: str | None = None
+    rejectCode: str  # "Undefined" "SumIsLessThenMinimum" "DayOfWeekIsUnacceptable" "DeliveryTimeIsUnacceptable" "OutOfTerminalZone"
+    rejectHint: str
+    rejectItemData: RejectItemData
+
+
+class SuitableTerminalGroupsResult(BaseModel):
+    correlationId: str
+    isAllowed: bool
+    addressExternalId: str | None = None
+    location: Coordinates | None = None
+    allowedItems: list[AllowedItem]
+    rejectedItems: list[RejectedItem]
+
+
+class DynamicDiscount(BaseModel):
+    manualConditionId: str
+    Sum: float
+
+
+class CalculateCheckinRequest(BaseModel):
+    order: Order
+    coupon: str | None = None
+    referrerId: str | None = None
+    organizationId: str
+    terminalGroupId: str | None = None
+    availablePaymentMarketingCampaignIds: list[str] | None = None
+    applicableManualConditions: list[str] | None = None
+    dynamicDiscounts: list[DynamicDiscount] | None = None
+    isLoyaltyTraceEnabled: bool
+
+
+class Warning(BaseModel):
+    Code: str | None = None
+    ErrorCode: str | None = None
+    Message: str | None = None
+
+
+class WalletInfo(BaseModel):
+    id: str
+    maxSum: float
+    canHoldMoney: bool
+
+
+class AvailablePayment(BaseModel):
+    id: str
+    maxSum: float
+    order: int
+    walletInfos: list[WalletInfo]
+
+
+class Discount(BaseModel):
+    code: int
+    positionId: str | None = None
+    discountSum: float
+    amount: float | None = None
+    comment: str
+
+
+class FreeProduct(BaseModel):
+    id: str | None = None
+    code: str | None = None
+    size: list[str]
+
+
+class FreeProductGroup(BaseModel):
+    sourceActionId: str
+    descriptionForUser: str | None = None
+    products: list[FreeProduct]
+
+
+class Upsale(BaseModel):
+    sourceActionId: str
+    suggestionText: str
+    productCodes: list[str]
+
+
+class GroupMapping(BaseModel):
+    groupId: str
+    itemId: str | None = None
+
+
+class AvailableCombo(BaseModel):
+    specificationId: str
+    groupMapping: list[GroupMapping]
+
+
+class LoyaltyProgramResult(BaseModel):
+    marketingCampaignId: str
+    name: str
+    discounts: list[Discount]
+    upsales: list[Upsale]
+    freeProducts: list[FreeProductGroup]
+    availableComboSpecifications: list[str]
+    availableCombos: list[AvailableCombo]
+    needToActivateCertificate: bool
+
+
+class CalculateCheckinResult(BaseModel):
+    loyaltyTrace: str | None = None
+    validationWarnings: list[str]
+    Warnings: list[Warning]
+    availablePayments: list[AvailablePayment]
+    loyaltyProgramResults: list[LoyaltyProgramResult]
+
+
 class GuestCard(BaseModel):
     id: UUID
     track: str
@@ -173,6 +431,26 @@ class TerminalGroupsResult(BaseModel):
     correlationId: UUID
     terminalGroups: list[TerminalGroup]
     terminalGroupsInSleep: list[TerminalGroup]
+
+
+class PaymentType(BaseModel):
+    id: str | None = None
+    code: str | None = None
+    name: str | None = None
+    comment: str | None = None
+    combinable: bool
+    externalRevision: int | None = None
+    applicableMarketingCampaigns: list[str]
+    isDeleted: bool
+    printCheque: bool
+    paymentProcessingType: str | None = None  # “External” “Internal” “Both”
+    paymentTypeKind: str | None = None  # “Unknown” “Cash” “Card” “Credit” “Writeoff” “Voucher” “External” “IikoCard"
+    terminalGroups: list[TerminalGroupItem]
+
+
+class PaymentTypesResult(BaseModel):
+    correlationId: UUID
+    paymentTypes: list[PaymentType]
 
 
 class OrganizationsResult(BaseModel):

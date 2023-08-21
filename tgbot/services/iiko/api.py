@@ -1,5 +1,6 @@
 import datetime
 import logging
+from pprint import pprint
 
 import aiohttp
 
@@ -18,6 +19,37 @@ class Iiko:
             'Authorization': 'Bearer {token}',
             'Content-Type': 'application/json'
         }
+
+    async def calculate_checkin(self, request: schemas.CalculateCheckinRequest):
+        url = 'https://api-ru.iiko.services/api/1/loyalty/iiko/calculate'
+        payload = request.model_dump()
+
+        result = await self._post_request(url, payload)
+        return schemas.CalculateCheckinResult(**result)
+
+    async def get_delivery_restrictions(self, org_ids):
+        url = 'https://api-ru.iiko.services/api/1/delivery_restrictions'
+        payload = {
+            'organizationIds': org_ids
+        }
+
+        return await self._post_request(url, payload)
+
+    async def get_terminal_groups_for_delivery(self, request_data: schemas.SuitableTerminalGroupsRequest) -> schemas.SuitableTerminalGroupsResult:
+        url = 'https://api-ru.iiko.services/api/1/delivery_restrictions/allowed'
+        payload = request_data.model_dump()
+
+        result = await self._post_request(url, payload)
+        return schemas.SuitableTerminalGroupsResult(**result)
+
+    async def get_payment_types(self, organization_ids: list[str]):
+        url = 'https://api-ru.iiko.services/api/1/payment_types'
+        payload = {
+            'organizationIds': organization_ids
+        }
+
+        result = await self._post_request(url, payload)
+        return schemas.PaymentTypesResult(**result)
 
     async def get_available_tables(self, terminal_group_ids: list[str], return_schema: bool, revision=None) -> schemas.TablesResult:
         url = 'https://api-ru.iiko.services/api/1/reserve/available_restaurant_sections'

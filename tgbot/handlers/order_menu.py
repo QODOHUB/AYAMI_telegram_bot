@@ -87,8 +87,15 @@ async def send_main_menu(message: Message):
     await message.answer(messages.main_menu, reply_markup=reply_keyboards.main_menu)
 
 
+async def send_delivery_zones(message: Message):
+    config = message.bot.get('config')
+    await message.answer(messages.delivery_zones,
+                         reply_markup=inline_keyboards.get_delivery_zones_keyboard(config.iiko.map_url))
+
+
 def register_order_menu(dp: Dispatcher):
     dp.register_message_handler(send_categories, Text(equals=reply_commands.open_menu))
     dp.register_message_handler(send_cart, Text(equals=reply_commands.cart))
     dp.register_message_handler(send_main_menu, Text(equals=reply_commands.main_menu))
+    dp.register_message_handler(send_delivery_zones, Text(equals=reply_commands.delivery_zones))
     dp.register_callback_query_handler(show_categories, text='groups')

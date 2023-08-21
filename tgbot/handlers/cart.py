@@ -1,3 +1,5 @@
+import datetime
+
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery, InputFile, InputMediaPhoto
 
@@ -136,8 +138,25 @@ async def del_product(call: CallbackQuery, callback_data: dict):
         await show_cart_product(call, callback_data={'id': cart_product.iiko_user.cart_products[0].id})
 
 
-async def start_order(call: CallbackQuery, callback_data: dict):
-    await call.answer('В разработке', show_alert=True)
+async def start_order(call: CallbackQuery):
+    time = datetime.datetime.now()
+    open_time = 9
+    if time.weekday() in (4, 5):
+        if time.hour < open_time:
+            await call.answer('', show_alert=True)
+            return
+    else:
+        if not(open_time < time.hour < 23):
+            await call.answer('', show_alert=True)
+            return
+
+    if call.message.photo:
+        await call.message.answer(messages.start_order, reply_markup=inline_keyboards.start_order)
+        await call.message.delete()
+    else:
+        await call.message.edit_text(messages.start_order, reply_markup=inline_keyboards.start_order)
+
+    await call.answer()
 
 
 def register_cart(dp: Dispatcher):

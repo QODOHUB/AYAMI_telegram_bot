@@ -14,6 +14,7 @@ sqlalchemy = {extras = ["asyncio"], version = "*"}
 redis = "*"
 pydantic = "*"
 aiohttp = "*"
+yookassa = "*"
 
 [dev-packages]
 

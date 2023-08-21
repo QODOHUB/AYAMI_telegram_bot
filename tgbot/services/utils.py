@@ -1,15 +1,56 @@
 import re
+from datetime import datetime, timedelta
 from pprint import pprint
 
 from aiogram.types import InputFile, InputMediaPhoto
 
+from tgbot.services.database.models import Organization, IikoUser
 from tgbot.services.database.models.group import Group
 from tgbot.services.database.models.product import Product
+from tgbot.services.iiko.api import Iiko
 
 
 def contains_only_russian_letters(input_string):
     pattern = r'^[а-яА-ЯёЁ]+$'
     return bool(re.match(pattern, input_string))
+
+
+async def update_organizations_from_api(session, iiko: Iiko):
+    organizations = await iiko.get_organizations(extended_info=True, include_disabled=False)
+    for organization in organizations.organizations:
+        db_org = await session.get(Organization, organization.id)
+        if db_org:
+            db_org.name = organization.name
+            db_org.code = organization.code
+            db_org.address = organization.restaurantAddress
+        else:
+            new_db_org = Organization(
+                id=organization.id,
+                name=organization.name,
+                code=organization.code,
+                address=organization.restaurantAddress,
+                name_in_bot=organization.restaurantAddress
+            )
+            session.add(new_db_org)
+
+    await session.commit()
+
+
+async def update_user_from_api(session, iiko: Iiko, user_id) -> IikoUser:
+    user = await iiko.get_customer_info('id', str(user_id))
+    db_user = await session.get(IikoUser, user_id)
+    db_user.referrer_id = user.referrerId
+    db_user.name = user.name
+    db_user.surname = user.surname
+    db_user.middle_name = user.middleName
+    db_user.comment = user.comment
+    db_user.culture_name = user.cultureName
+    db_user.birthday = user.birthday
+    db_user.email = user.email
+    db_user.sex = user.sex
+    db_user.bonus_balance = user.walletBalances[0].balance
+    await session.commit()
+    return db_user
 
 
 async def update_menu_from_api(session, iiko, redis):
@@ -45,7 +86,7 @@ async def update_menu_from_api(session, iiko, redis):
     added = set()
     bad_groups = set()
     for product in menu.products:
-        if product.isDeleted or product.type != 'Dish' or product.code in added or 'Доставка' in product.name:
+        if product.isDeleted or product.type != 'Dish' or product.code in added:
             continue
 
         if product.groupId in added_groups:
@@ -101,3 +142,24 @@ async def update_message_content(call, redis, text, keyboard, image_link):
                 await redis.set(image_link, msg.photo[-1].file_id)
         else:
             await call.message.edit_text(text, reply_markup=keyboard)
+
+
+def round_up_to_interval(date, interval):
+    remainder = (date - datetime.min) % interval
+    if remainder:
+        return date + (interval - remainder)
+    return date
+
+
+def generate_dates(start_date: datetime, end_date: datetime, interval_minutes: int):
+    interval = timedelta(minutes=interval_minutes)
+
+    start_date = round_up_to_interval(start_date, interval)
+    current_date = start_date
+    while current_date <= end_date:
+        yield current_date
+        current_date += interval
+
+
+def check_time(time: datetime):
+    current_time = datetime.now()

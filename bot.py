@@ -8,6 +8,7 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aioredis import Redis
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from yookassa import Configuration
 
 from tgbot.config import load_config
 from tgbot import handlers
@@ -65,6 +66,9 @@ async def main():
     async_sessionmaker = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession, future=True)
 
     iiko = Iiko(config.iiko.login, config.iiko.default_organization_id)
+
+    Configuration.account_id = config.yookassa.store_id
+    Configuration.secret_key = config.yookassa.secret_key
 
     bot['config'] = config
     bot['redis'] = redis

@@ -11,3 +11,11 @@ product = CallbackData('prd', 'action', 'id')
 
 # actions: 'del', '+', '-', 'pay', 'show'
 cart = CallbackData('crt', 'action', 'id')
+
+time = CallbackData('time', 'time')
+
+check = CallbackData('check', 'id')
+
+skip = CallbackData('skip', 'value')
+
+organization = CallbackData('org', 'id')

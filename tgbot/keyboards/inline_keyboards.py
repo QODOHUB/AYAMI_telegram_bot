@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from tgbot.misc import callbacks
-from tgbot.services.database.models import Group, Product, Cart
+from tgbot.services.database.models import Group, Product, Cart, Organization
+from tgbot.services.utils import generate_dates
 
 
 def get_feedback_keyboard(feedback_url: str):
@@ -108,6 +111,75 @@ def get_cart_keyboard(cart_products, current_product, product_num, total_sum):
     return keyboard
 
 
+def get_delivery_zones_keyboard(map_url, add_menu=False):
+    keyboard = InlineKeyboardMarkup()
+
+    keyboard.add(
+        InlineKeyboardButton('Открыть карту зон доставки', url=map_url)
+    )
+
+    if add_menu:
+        keyboard.add(
+            InlineKeyboardButton('Открыть меню', callback_data='groups')
+        )
+
+    return keyboard
+
+
+def get_time_keyboard(start_time: datetime, end_time: datetime, interval: int):
+    keyboard = InlineKeyboardMarkup(row_width=3)
+
+    keyboard.row(
+        InlineKeyboardButton('Как можно скорее', callback_data=callbacks.time.new(time=''))
+    )
+
+    dates = generate_dates(start_time, end_time, interval)
+    buttons = [InlineKeyboardButton(date.strftime('%H:%M'),
+                                    callback_data=callbacks.time.new(time=date.strftime('%H-%M'))) for date in dates]
+    keyboard.add(*buttons)
+
+    return keyboard
+
+
+def get_pay_keyboard(pay_url, payment_id):
+    keyboard = InlineKeyboardMarkup(row_width=1)
+
+    keyboard.add(
+        InlineKeyboardButton('Оплатить', url=pay_url),
+        InlineKeyboardButton('Проверить оплату', callback_data=callbacks.check.new(id=payment_id))
+    )
+
+    return keyboard
+
+
+def get_skip_keyboard(skip: str):
+    keyboard = InlineKeyboardMarkup()
+
+    keyboard.add(
+        InlineKeyboardButton('Пропустить', callback_data=callbacks.skip.new(value=skip))
+    )
+
+    return keyboard
+
+
+def get_organizations_keyboard(organizations: list[Organization]):
+    keyboard = InlineKeyboardMarkup()
+
+    for organization in organizations:
+        keyboard.add(
+            InlineKeyboardButton(organization.name_in_bot, callback_data=callbacks.organization.new(id=organization.id))
+        )
+
+    return keyboard
+
+
+start_order = InlineKeyboardMarkup(row_width=1)
+start_order.add(
+    InlineKeyboardButton('На доставку', callback_data='delivery'),
+    InlineKeyboardButton('Самовывоз', callback_data='pickup')
+)
+
+
 profile = InlineKeyboardMarkup(row_width=1)
 profile.add(
     InlineKeyboardButton('Изменить имя', callback_data=callbacks.profile.new(action='update_name')),
@@ -117,4 +189,21 @@ profile.add(
 open_menu = InlineKeyboardMarkup()
 open_menu.add(
     InlineKeyboardButton('Открыть меню', callback_data='groups')
+)
+
+bonuses = InlineKeyboardMarkup(row_width=1)
+bonuses.add(
+    InlineKeyboardButton('Не использовать баллы', callback_data='no_bonuses'),
+    InlineKeyboardButton('Потратить баллы', callback_data='bonuses')
+)
+
+payment_type_choose = InlineKeyboardMarkup(row_width=1)
+payment_type_choose.add(
+    InlineKeyboardButton('При получении', callback_data='offline'),
+    InlineKeyboardButton('Онлайн', callback_data='online')
+)
+
+continue_order = InlineKeyboardMarkup()
+continue_order.add(
+    InlineKeyboardButton('Продолжить', callback_data='continue')
 )

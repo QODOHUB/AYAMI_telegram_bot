@@ -21,5 +21,6 @@ order = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
 order.add(
     KeyboardButton(reply_commands.open_menu),
     KeyboardButton(reply_commands.cart),
+    KeyboardButton(reply_commands.delivery_zones),
     KeyboardButton(reply_commands.main_menu)
 )

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer, select
+from sqlalchemy import Column, BigInteger, DateTime, String, UUID, ForeignKey, Integer, select, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
@@ -16,6 +16,7 @@ class Group(Base):
     name = Column(String(128))
     revision = Column(BigInteger)
     parent_id = Column(UUID, ForeignKey('product_group.id'), nullable=True)
+    show_in_bot = Column(Boolean, default=False)
 
     parent = relationship('Group', lazy='selectin', backref='children', remote_side='Group.id')
 

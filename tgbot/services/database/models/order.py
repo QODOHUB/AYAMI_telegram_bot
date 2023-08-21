@@ -13,7 +13,6 @@ class OrderProduct(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     order_id = Column(UUID, ForeignKey('order.id'))
     product_id = Column(UUID, ForeignKey('product.id'))
-    final_price = Column(Double)
     quantity = Column(Integer)
 
     product = relationship('Product', lazy='selectin')
@@ -25,6 +24,7 @@ class Order(Base):
     id = Column(UUID, primary_key=True)
     iiko_user_id = Column(UUID, ForeignKey('iiko_user.id'))
     payment_sum = Column(Double)
+    bonuses = Column(Double)
     created_at = Column(DateTime(), default=datetime.datetime.now())
 
     iiko_user = relationship('IikoUser', backref='orders')
