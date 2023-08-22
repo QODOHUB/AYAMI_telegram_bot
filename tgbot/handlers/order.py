@@ -417,6 +417,12 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
                 )
             )
 
+        time = state_data.get('time') or None
+        if time:
+            [hour, minute] = time.split('-')
+            cur_date = datetime.date.today()
+            time = datetime.datetime.combine(cur_date, datetime.time(hour, minute)).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
         order = Order(
             phone='+' + iiko_user.phone,
             orderServiceType=service_type,
@@ -427,7 +433,8 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             items=items,
             payments=payments,
             deliveryPoint=delivery_point,
-            comment=state_data.get('comment')
+            comment=state_data.get('comment'),
+            completeBefore=time
         )
 
         new_order = DeliveryCreate(
