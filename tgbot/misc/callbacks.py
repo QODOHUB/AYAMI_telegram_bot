@@ -19,3 +19,5 @@ check = CallbackData('check', 'id')
 skip = CallbackData('skip', 'value')
 
 organization = CallbackData('org', 'id')
+
+order = CallbackData('order', 'ind')

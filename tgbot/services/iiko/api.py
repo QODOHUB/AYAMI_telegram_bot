@@ -35,6 +35,30 @@ class Iiko:
 
         return await self._post_request(url, payload)
 
+    async def get_order_types(self, org_ids):
+        url = 'https://api-ru.iiko.services/api/1/deliveries/order_types'
+        payload = {
+            'organizationIds': org_ids
+        }
+
+        return await self._post_request(url, payload)
+
+    async def create_delivery(self, request: schemas.DeliveryCreate):
+        url = 'https://api-ru.iiko.services/api/1/deliveries/create'
+        payload = request.model_dump()
+
+        result = await self._post_request(url, payload)
+        return result
+
+    async def cancel_order(self, order_id, org_id):
+        url = 'https://api-ru.iiko.services/api/1/deliveries/cancel'
+        payload = {
+            'organizationId': org_id,
+            'orderId': order_id
+        }
+
+        return await self._post_request(url, payload)
+
     async def get_terminal_groups_for_delivery(self, request_data: schemas.SuitableTerminalGroupsRequest) -> schemas.SuitableTerminalGroupsResult:
         url = 'https://api-ru.iiko.services/api/1/delivery_restrictions/allowed'
         payload = request_data.model_dump()

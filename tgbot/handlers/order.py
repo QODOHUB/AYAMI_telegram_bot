@@ -38,17 +38,9 @@ async def customer_pickup(call: CallbackQuery):
 
 async def get_pickup_point(call: CallbackQuery, callback_data: dict, state: FSMContext):
     await state.update_data(organization=callback_data['id'])
-    cur_date = datetime.datetime.now()
-    start_date = cur_date + datetime.timedelta(hours=2)
-    if cur_date.weekday() in (4, 5):
-        end_date = datetime.datetime.combine(datetime.date.today(), datetime.time(23, 59)) + datetime.timedelta(
-            minutes=1)
-    else:
-        end_date = datetime.datetime.combine(datetime.date.today(), datetime.time(23, 0))
-    interval = 30
-
-    await call.message.answer('К какому времени доставить заказ?',
-                              reply_markup=inline_keyboards.get_time_keyboard(start_date, end_date, interval))
+    await call.message.answer('➡️ Введите комментарий',
+                              reply_markup=inline_keyboards.get_skip_keyboard('comment'))
+    await states.Order.waiting_for_comment.set()
     await call.answer()
 
 
@@ -116,7 +108,8 @@ async def get_house(message: Message, state: FSMContext):
 
         if not suitable_terminals.allowedItems:
             config = message.bot.get('config')
-            await message.answer(messages.bad_address_or_sum,
+            await message.answer(messages.bad_address_or_sum, reply_markup=reply_keyboards.order)
+            await message.answer(messages.min_price_and_zones,
                                  reply_markup=inline_keyboards.get_delivery_zones_keyboard(config.iiko.map_url, True))
             await state.finish()
             return
@@ -356,9 +349,10 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             )
 
         delivery_prod_id = state_data.get('delivery_product')
-
+        delivery_price = 0
         if delivery_prod_id:
             delivery_product = await session.get(Product, delivery_prod_id)
+            delivery_price = delivery_product.price
             payment_sum += delivery_product.price
             items.append(
                 OrderItem(
@@ -369,26 +363,31 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             )
 
         if state_data.get('offline'):
-            payment_type = config.iiko.payments.visa
+            if state_data.get('delivery'):
+                payment_type = config.iiko.payments.courier
+            else:
+                payment_type = config.iiko.payments.visa
             is_prepay = False
         else:
-
+            payment_type = config.iiko.payments.online
             is_prepay = True
 
         delivery_point = None
         service_type = 'DeliveryPickUp'
+        order_type = 'pickup'
         if state_data.get('delivery'):
             service_type = 'DeliveryByCourier'
+            order_type = 'delivery'
             delivery_point = DeliveryPoint(
                 address=Address(
                     street=Street(
                         city=state_data['city'],
                         name=state_data['street']
                     ),
-                    house=state_data['house'],
-                    flat=state_data['flat'],
-                    entrance=state_data['entrance'],
-                    floor=state_data['floor']
+                    house=state_data.get('house'),
+                    flat=state_data.get('flat'),
+                    entrance=state_data.get('entrance'),
+                    floor=state_data.get('floor')
                 )
             )
 
@@ -399,8 +398,6 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
                     paymentTypeId=payment_type,
                     sum=payment.amount.value,
                     isPrepay=is_prepay,
-                    isFiscalizedExternally=True,
-                    isProcessedExternally=True,
                     paymentTypeKind='Card'
                 )
             )
@@ -421,8 +418,8 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             )
 
         order = Order(
-            phone=iiko_user.phone,
-            orderServiceType='DeliveryByCourier',
+            phone='+' + iiko_user.phone,
+            orderServiceType=service_type,
             customer=OrderCustomer(
                 id=str(iiko_user.id),
                 type='regular'
@@ -430,21 +427,8 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             items=items,
             payments=payments,
             deliveryPoint=delivery_point,
-            comment=state_data['comment']
+            comment=state_data.get('comment')
         )
-
-        request = CalculateCheckinRequest(
-            organizationId=state_data['organization'],
-            terminalGroupId=state_data['terminal_group'],
-            order=order,
-            isLoyaltyTraceEnabled=True
-        )
-
-        pprint(request.model_dump())
-
-        calculate_checkin = await iiko.calculate_checkin(request)
-
-        pprint(calculate_checkin.model_dump())
 
         new_order = DeliveryCreate(
             organizationId=state_data['organization'],
@@ -452,13 +436,22 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             order=order
         )
 
-        # TODO: создать заказ iiko
+        print('NO IIKO')
+
+        # pprint(new_order.model_dump())
+
+        # order_result = await iiko.create_delivery(new_order)
+        #
+        # pprint(order_result)
+
+        print('NO IIKO')
 
         db_order = DBOrder(
             id=uuid.uuid4(),  # TODO: заменить на id из iiko
             iiko_user_id=iiko_user.id,
-            payment_sum=payment.amount,
-            bonuses=0  # TODO: считать бонусы откуда-то
+            payment_sum=payment.amount.value,
+            type=order_type,
+            delivery=delivery_price
         )
         session.add(db_order)
 
@@ -474,6 +467,26 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
             await session.delete(cart_product)
 
         await session.commit()
+
+        time = state_data.get('time')
+        if time:
+            time = time.replace('-', ':')
+        else:
+            cur_time = datetime.datetime.now()
+            time = f'{cur_time.hour + 2}:{cur_time.minute}'
+        if state_data.get('delivery'):
+            await call.message.answer(messages.delivery_order_created.format(
+                time=time,
+                address=f'{state_data.get("street")} {state_data.get("house")}'
+            ), reply_markup=reply_keyboards.main_menu)
+        else:
+            organization = await session.get(Organization, state_data['organization'])
+            await call.message.answer(messages.pickup_order_created.format(
+                time=time,
+                address=organization.address
+            ), reply_markup=reply_keyboards.main_menu)
+
+        await state.finish()
 
 
 async def check_payment(call: CallbackQuery, callback_data: dict, state: FSMContext):

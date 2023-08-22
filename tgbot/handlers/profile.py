@@ -3,9 +3,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from tgbot.handlers.main_menu import send_profile
-from tgbot.keyboards import reply_keyboards
+from tgbot.keyboards import reply_keyboards, inline_keyboards
 from tgbot.misc import callbacks, states, messages
-from tgbot.services.database.models import IikoUser
+from tgbot.services.database.models import IikoUser, TelegramUser
 from tgbot.services.iiko.schemas import CreateOrUpdateCustomer
 from tgbot.services.utils import contains_only_russian_letters
 
@@ -42,7 +42,49 @@ async def get_new_name(message: Message, state: FSMContext):
 
 
 async def show_orders(call: CallbackQuery):
-    await call.answer('В разработке', show_alert=True)
+    db = call.bot.get('database')
+    async with db() as session:
+        iiko_user = await IikoUser.get_by_telegram_id(session, call.from_user.id)
+        await session.refresh(iiko_user, ['orders'])
+
+        if not iiko_user.orders:
+            await call.answer('У вас пока нет заказов!', show_alert=True)
+        else:
+            await show_order(call, {'ind': 0})
+
+
+async def show_order(call: CallbackQuery, callback_data: dict):
+    db = call.bot.get('database')
+    async with db() as session:
+        iiko_user = await IikoUser.get_by_telegram_id(session, call.from_user.id)
+        await session.refresh(iiko_user, ['orders'])
+        cur_order = iiko_user.orders[int(callback_data['ind'])]
+        await session.refresh(cur_order, ['order_products'])
+        products_str = ''
+        for order_product in cur_order.order_products:
+            product = order_product.product
+            price = product.price * order_product.quantity
+            products_str += f'- {product.name}: {product.price}₽ * {order_product.quantity} = {price}₽'
+
+    if cur_order.type == 'delivery':
+        order_type = 'Доставка'
+        delivery = f'\nДоставка: {cur_order.delivery}₽'
+    else:
+        order_type = 'Самовывоз'
+        delivery = ''
+
+    text = messages.order.format(
+        date=cur_order.created_at.strftime('%Y-%m-%d %H:%M'),
+        type=order_type,
+        payment_sum=f'{cur_order.payment_sum}₽ + {cur_order.bonus_pay} бон. = {cur_order.payment_sum + cur_order.bonus_pay}',
+        delivery=delivery,
+        order_list=products_str
+    )
+
+    keyboard = inline_keyboards.get_orders_keyboard(len(iiko_user.orders), int(callback_data['ind']))
+
+    await call.message.edit_text(text, reply_markup=keyboard)
+    await call.answer()
 
 
 def register_profile(dp: Dispatcher):
@@ -50,3 +92,4 @@ def register_profile(dp: Dispatcher):
     dp.register_message_handler(get_new_name, state=states.UpdateName.waiting_for_name)
 
     dp.register_callback_query_handler(show_orders, callbacks.profile.filter(action='show_orders'))
+    dp.register_callback_query_handler(show_order, callbacks.order.filter())

@@ -143,11 +143,11 @@ async def start_order(call: CallbackQuery):
     open_time = 9
     if time.weekday() in (4, 5):
         if time.hour < open_time:
-            await call.answer('', show_alert=True)
+            await call.answer(messages.working_time, show_alert=True)
             return
     else:
         if not(open_time < time.hour < 23):
-            await call.answer('', show_alert=True)
+            await call.answer(messages.working_time, show_alert=True)
             return
 
     if call.message.photo:

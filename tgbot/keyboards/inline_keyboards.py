@@ -173,6 +173,25 @@ def get_organizations_keyboard(organizations: list[Organization]):
     return keyboard
 
 
+def get_orders_keyboard(orders_count, ind):
+    keyboard = InlineKeyboardMarkup()
+
+    prev_call = callbacks.order.new(ind=ind - 1) if ind > 0 else 'pass'
+    next_call = callbacks.order.new(ind=ind + 1) if ind < orders_count - 1 else 'pass'
+
+    keyboard.row(
+        InlineKeyboardButton('<<', callback_data=prev_call),
+        InlineKeyboardButton(f'{ind + 1} из {orders_count}', callback_data='pass'),
+        InlineKeyboardButton('>>', callback_data=next_call)
+    )
+
+    keyboard.add(
+        InlineKeyboardButton('Назад', callback_data='profile')
+    )
+
+    return keyboard
+
+
 start_order = InlineKeyboardMarkup(row_width=1)
 start_order.add(
     InlineKeyboardButton('На доставку', callback_data='delivery'),

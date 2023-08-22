@@ -49,7 +49,7 @@ class OrderCustomer(BaseModel):
     birthday: str | None = None
     email: str | None = None
     shouldReceiveOrderStatusNotifications: bool | None = None
-    gender: str | None = None
+    gender: str = 'NotSpecified'
     type: str
 
 
@@ -102,6 +102,7 @@ class Order(BaseModel):
     loyaltyInfo: None = None  # Not used
     chequeAdditionalInfo: None = None  # Not used
     externalData: None = None  # Not used
+    marketingSourceId: str | None = None
 
 
 class DeliveryCreate(BaseModel):
@@ -185,12 +186,12 @@ class DynamicDiscount(BaseModel):
 class CalculateCheckinRequest(BaseModel):
     order: Order
     coupon: str | None = None
-    referrerId: str | None = None
+    # referrerId: str | None = None
     organizationId: str
-    terminalGroupId: str | None = None
-    availablePaymentMarketingCampaignIds: list[str] | None = None
-    applicableManualConditions: list[str] | None = None
-    dynamicDiscounts: list[DynamicDiscount] | None = None
+    # terminalGroupId: str | None = None
+    availablePaymentMarketingCampaignIds: list[str] | None = list()
+    applicableManualConditions: list[str] | None = list()
+    dynamicDiscounts: list[DynamicDiscount] | None = list()
     isLoyaltyTraceEnabled: bool
 
 
