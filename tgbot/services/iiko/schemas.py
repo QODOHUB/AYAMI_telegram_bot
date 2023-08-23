@@ -1,5 +1,6 @@
 import datetime
 import re
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, field_validator
@@ -447,6 +448,64 @@ class PaymentType(BaseModel):
     paymentProcessingType: str | None = None  # “External” “Internal” “Both”
     paymentTypeKind: str | None = None  # “Unknown” “Cash” “Card” “Credit” “Writeoff” “Voucher” “External” “IikoCard"
     terminalGroups: list[TerminalGroupItem]
+
+
+class Guests(BaseModel):
+    count: int
+
+
+class CreateReserveRequest(BaseModel):
+    organizationId: str
+    terminalGroupId: str
+    id: str | None = None
+    externalNumber: str | None = None
+    order: Order | None = None
+    customer: OrderCustomer
+    phone: str
+    comment: str | None = None
+    durationInMinutes: int
+    shouldRemind: bool
+    tableIds: list[str]
+    estimatedStartTime: str
+    transportToFrontTimeout: int | None = None
+    guests: Guests | None = None
+    eventType: str | None = None
+
+
+class ErrorInfo(BaseModel):
+    code: str
+    message: str | None = None
+    description: str | None = None
+    additionalData: Any | None = None
+
+
+class ReserveInfo(BaseModel):
+    id: str
+    organizationId: str
+    externalNumber: str | None = None
+    timestamp: int
+    creationStatus: str  # "Success" "InProgress" "Error"
+    isDeleted: bool
+    errorInfo: ErrorInfo | None = None
+    reserve: None = None  # Not used
+
+
+class CreateReserveResult(BaseModel):
+    correlationId: str
+    reserveInfo: ReserveInfo
+
+
+class Reserve(BaseModel):
+    id: str
+    tableIds: list[str]
+    estimatedStartTime: str
+    durationInMinutes: int
+    guestsCount: int
+
+
+class ReservesResult(BaseModel):
+    correlationId: str
+    reserves: list[Reserve]
 
 
 class PaymentTypesResult(BaseModel):

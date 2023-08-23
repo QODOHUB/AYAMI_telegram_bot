@@ -21,3 +21,10 @@ class Order(StatesGroup):
     waiting_for_comment = State()
 
     finishing = State()
+
+
+class ReserveTable(StatesGroup):
+    waiting_for_guests_count = State()
+    waiting_for_date = State()
+
+    finishing = State()

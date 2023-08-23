@@ -20,6 +20,24 @@ class Iiko:
             'Content-Type': 'application/json'
         }
 
+    async def create_reserve(self, request: schemas.CreateReserveRequest):
+        url = 'https://api-ru.iiko.services/api/1/reserve/create'
+        payload = request.model_dump()
+
+        result = await self._post_request(url, payload)
+        return schemas.CreateReserveResult(**result)
+
+    async def get_reserves(self, sections: list[str], date_from: str, date_to: str = None) -> schemas.ReservesResult:
+        url = 'https://api-ru.iiko.services/api/1/reserve/restaurant_sections_workload'
+        payload = {
+            'restaurantSectionIds': sections,
+            'dateFrom': date_from,
+            'dateTo': date_to
+        }
+
+        result = await self._post_request(url, payload)
+        return schemas.ReservesResult(**result)
+
     async def calculate_checkin(self, request: schemas.CalculateCheckinRequest):
         url = 'https://api-ru.iiko.services/api/1/loyalty/iiko/calculate'
         payload = request.model_dump()

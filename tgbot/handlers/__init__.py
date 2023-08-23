@@ -7,6 +7,7 @@ from .order_menu import register_order_menu
 from .menu import register_menu
 from .cart import register_cart
 from .order import register_order
+from .reserve import register_reserve
 
 register_functions = (
     register_commands,
@@ -17,5 +18,6 @@ register_functions = (
     register_order_menu,
     register_menu,
     register_cart,
-    register_order
+    register_order,
+    register_reserve
 )

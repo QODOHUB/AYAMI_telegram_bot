@@ -31,7 +31,7 @@ async def customer_pickup(call: CallbackQuery):
     await call.message.answer(f'Для отмены нажмите кнопку "{reply_commands.cancel}"',
                               reply_markup=reply_keyboards.cancel)
     await call.message.answer('Из какого ресторана вам удобно сделать самовывоз?',
-                              reply_markup=inline_keyboards.get_organizations_keyboard(organizations))
+                              reply_markup=inline_keyboards.get_organizations_keyboard(organizations, 'ord'))
     await states.Order.finishing.set()
     await call.answer()
 
@@ -144,12 +144,17 @@ async def skip(call: CallbackQuery, callback_data: dict):
         await call.message.edit_text('➡️ Введите комментарий',
                                      reply_markup=inline_keyboards.get_skip_keyboard('comment'))
     elif value == 'comment':
-        start_date = datetime.datetime.now() + datetime.timedelta(hours=2)
-        end_date = datetime.datetime.combine(datetime.date.today(), datetime.time(22))
+        cur_date = datetime.datetime.now()
+        start_date = cur_date + datetime.timedelta(hours=2)
+        if cur_date.weekday() in (4, 5):
+            end_date = datetime.datetime.combine(datetime.date.today(), datetime.time(23, 59)) + datetime.timedelta(
+                minutes=1)
+        else:
+            end_date = datetime.datetime.combine(datetime.date.today(), datetime.time(23, 0))
         interval = 30
 
         await call.message.edit_text('К какому времени доставить заказ?',
-                                     reply_markup=inline_keyboards.get_time_keyboard(start_date, end_date, interval))
+                                     reply_markup=inline_keyboards.get_time_keyboard(start_date, end_date, interval, 'ord'))
 
     await states.Order.next()
     await call.answer()
@@ -207,7 +212,7 @@ async def get_comment(message: Message, state: FSMContext):
     interval = 30
 
     await message.answer('К какому времени доставить заказ?',
-                         reply_markup=inline_keyboards.get_time_keyboard(start_date, end_date, interval))
+                         reply_markup=inline_keyboards.get_time_keyboard(start_date, end_date, interval, 'ord'))
     await state.update_data(comment=comment)
     await states.Order.next()
 
@@ -521,7 +526,7 @@ def register_order(dp: Dispatcher):
     dp.register_callback_query_handler(start_address_input, text='delivery')
     dp.register_callback_query_handler(customer_pickup, text='pickup')
 
-    dp.register_callback_query_handler(get_pickup_point, callbacks.organization.filter(), state=states.Order.finishing)
+    dp.register_callback_query_handler(get_pickup_point, callbacks.organization.filter(action='ord'), state=states.Order.finishing)
 
     dp.register_message_handler(get_city, state=states.Order.waiting_for_city)
     dp.register_message_handler(get_street, state=states.Order.waiting_for_street)
@@ -533,7 +538,7 @@ def register_order(dp: Dispatcher):
 
     dp.register_callback_query_handler(skip, callbacks.skip.filter(), state=states.Order.all_states)
 
-    dp.register_callback_query_handler(get_time, callbacks.time.filter(), state=states.Order.finishing)
+    dp.register_callback_query_handler(get_time, callbacks.time.filter(action='ord'), state=states.Order.finishing)
     dp.register_callback_query_handler(with_bonuses, text='bonuses', state=states.Order.finishing)
     dp.register_callback_query_handler(no_bonuses, text='no_bonuses', state=states.Order.finishing)
     dp.register_callback_query_handler(online_pay, text='online', state=states.Order.finishing)

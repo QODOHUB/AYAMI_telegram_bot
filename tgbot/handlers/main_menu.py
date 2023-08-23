@@ -4,8 +4,8 @@ from aiogram.types import Message, CallbackQuery
 
 from tgbot.keyboards import inline_keyboards, reply_keyboards
 from tgbot.misc import reply_commands, messages
-from tgbot.services.database.models import IikoUser
-from tgbot.services.utils import update_user_from_api
+from tgbot.services.database.models import IikoUser, Organization
+from tgbot.services.utils import update_user_from_api, update_organizations_from_api
 
 
 async def send_profile(message: Message):
@@ -50,7 +50,13 @@ async def send_feedback_menu(message: Message):
 
 
 async def send_reserve_table(message: Message):
-    await message.answer('В разработке')
+    db = message.bot.get('database')
+    iiko = message.bot.get('iiko')
+    async with db() as session:
+        await update_organizations_from_api(session, iiko)
+        organizations = await Organization.get_all(session)
+    await message.answer('Выберите ресторан',
+                         reply_markup=inline_keyboards.get_organizations_keyboard(organizations, 'res'))
 
 
 async def send_order_food(message: Message):

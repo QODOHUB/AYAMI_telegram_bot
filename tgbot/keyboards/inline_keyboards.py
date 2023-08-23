@@ -126,16 +126,17 @@ def get_delivery_zones_keyboard(map_url, add_menu=False):
     return keyboard
 
 
-def get_time_keyboard(start_time: datetime, end_time: datetime, interval: int):
+def get_time_keyboard(start_time: datetime, end_time: datetime, interval: int, action):
     keyboard = InlineKeyboardMarkup(row_width=3)
 
-    keyboard.row(
-        InlineKeyboardButton('Как можно скорее', callback_data=callbacks.time.new(time=''))
-    )
+    if action == 'ord':
+        keyboard.row(
+            InlineKeyboardButton('Как можно скорее', callback_data=callbacks.time.new(time=''))
+        )
 
     dates = generate_dates(start_time, end_time, interval)
     buttons = [InlineKeyboardButton(date.strftime('%H:%M'),
-                                    callback_data=callbacks.time.new(time=date.strftime('%H-%M'))) for date in dates]
+                                    callback_data=callbacks.time.new(time=date.strftime('%H-%M'), action=action)) for date in dates]
     keyboard.add(*buttons)
 
     return keyboard
@@ -162,12 +163,12 @@ def get_skip_keyboard(skip: str):
     return keyboard
 
 
-def get_organizations_keyboard(organizations: list[Organization]):
+def get_organizations_keyboard(organizations: list[Organization], action):
     keyboard = InlineKeyboardMarkup()
 
     for organization in organizations:
         keyboard.add(
-            InlineKeyboardButton(organization.name_in_bot, callback_data=callbacks.organization.new(id=organization.id))
+            InlineKeyboardButton(organization.name_in_bot, callback_data=callbacks.organization.new(id=organization.id, action=action))
         )
 
     return keyboard
