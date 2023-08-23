@@ -214,6 +214,7 @@ async def get_comment(message: Message, state: FSMContext):
     await message.answer('К какому времени доставить заказ?',
                          reply_markup=inline_keyboards.get_time_keyboard(start_date, end_date, interval, 'ord'))
     await state.update_data(comment=comment)
+    print(await state.get_state())
     await states.Order.next()
 
 
@@ -407,6 +408,7 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
                 )
             )
 
+        bonus_pay = 0
         if state_data.get('bonuses'):
             if not payment and payment_sum <= iiko_user.bonus_balance:
                 await call.message.answer(
@@ -421,12 +423,13 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
                     sum=iiko_user.bonus_balance
                 )
             )
+            bonus_pay = iiko_user.bonus_balance
 
         time = state_data.get('time') or None
         if time:
             [hour, minute] = time.split('-')
             cur_date = datetime.date.today()
-            time = datetime.datetime.combine(cur_date, datetime.time(hour, minute)).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            time = datetime.datetime.combine(cur_date, datetime.time(int(hour), int(minute))).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
         order = Order(
             phone='+' + iiko_user.phone,
@@ -444,7 +447,7 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
 
         new_order = DeliveryCreate(
             organizationId=state_data['organization'],
-            terminalGroupId=state_data['terminal_group'],
+            terminalGroupId=state_data.get('terminal_group'),
             order=order
         )
 
@@ -461,9 +464,11 @@ async def create_order(call, state, payment: PaymentResponse | None = None):
         db_order = DBOrder(
             id=uuid.uuid4(),  # TODO: заменить на id из iiko
             iiko_user_id=iiko_user.id,
-            payment_sum=payment.amount.value,
+            payment_sum=payment_sum - delivery_price,
+            bonus_pay=bonus_pay,
             type=order_type,
-            delivery=delivery_price
+            delivery=delivery_price,
+            created_at=datetime.datetime.now()
         )
         session.add(db_order)
 
@@ -542,5 +547,6 @@ def register_order(dp: Dispatcher):
     dp.register_callback_query_handler(with_bonuses, text='bonuses', state=states.Order.finishing)
     dp.register_callback_query_handler(no_bonuses, text='no_bonuses', state=states.Order.finishing)
     dp.register_callback_query_handler(online_pay, text='online', state=states.Order.finishing)
+    dp.register_callback_query_handler(offline_pay, text='offline', state=states.Order.finishing)
 
     dp.register_callback_query_handler(check_payment, callbacks.check.filter(), state=states.Order.finishing)

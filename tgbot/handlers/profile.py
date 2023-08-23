@@ -1,3 +1,4 @@
+import pytz
 from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -64,7 +65,7 @@ async def show_order(call: CallbackQuery, callback_data: dict):
         for order_product in cur_order.order_products:
             product = order_product.product
             price = product.price * order_product.quantity
-            products_str += f'- {product.name}: {product.price}₽ * {order_product.quantity} = {price}₽'
+            products_str += f'- {product.name}: {product.price}₽ * {order_product.quantity} = {price}₽\n'
 
     if cur_order.type == 'delivery':
         order_type = 'Доставка'
@@ -73,8 +74,10 @@ async def show_order(call: CallbackQuery, callback_data: dict):
         order_type = 'Самовывоз'
         delivery = ''
 
+    order_time = cur_order.created_at.astimezone(pytz.timezone('Europe/Moscow'))
+
     text = messages.order.format(
-        date=cur_order.created_at.strftime('%Y-%m-%d %H:%M'),
+        date=order_time.strftime('%Y-%m-%d %H:%M'),
         type=order_type,
         payment_sum=f'{cur_order.payment_sum}₽ + {cur_order.bonus_pay} бон. = {cur_order.payment_sum + cur_order.bonus_pay}',
         delivery=delivery,

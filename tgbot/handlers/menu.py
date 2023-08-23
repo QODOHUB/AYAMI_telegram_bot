@@ -24,12 +24,12 @@ async def show_subgroup_or_products(call: CallbackQuery, callback_data: dict):
         await session.refresh(group, ['children'])
         if group.children:
             text = messages.subgroup_choose.format(group=group.name)
-            revision_groups = filter(lambda grp: grp.revision == group.revision, group.children)
+            revision_groups = filter(lambda grp: grp.revision == group.revision and group.show_in_bot, group.children)
             keyboard = inline_keyboards.get_groups_keyboard(revision_groups, True)
         else:
             await session.refresh(group, ['products'])
             text = messages.product_choose.format(group=group.name)
-            revision_products = filter(lambda product: product.revision == group.revision, group.products)
+            revision_products = filter(lambda product: product.revision == group.revision and product.show_in_bot, group.products)
             keyboard = inline_keyboards.get_products_keyboard(revision_products, group.parent_id)
 
     await update_message_content(call, redis, text, keyboard, group.image_link)

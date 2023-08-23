@@ -131,7 +131,7 @@ def get_time_keyboard(start_time: datetime, end_time: datetime, interval: int, a
 
     if action == 'ord':
         keyboard.row(
-            InlineKeyboardButton('Как можно скорее', callback_data=callbacks.time.new(time=''))
+            InlineKeyboardButton('Как можно скорее', callback_data=callbacks.time.new(time='', action=action))
         )
 
     dates = generate_dates(start_time, end_time, interval)

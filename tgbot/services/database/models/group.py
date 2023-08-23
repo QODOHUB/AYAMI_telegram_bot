@@ -22,7 +22,7 @@ class Group(Base):
 
     @classmethod
     async def get_main_groups(cls, session, revision: int):
-        stmt = select(Group).where(Group.parent_id == None, Group.revision == revision)
+        stmt = select(Group).where(Group.parent_id == None, Group.revision == revision, Group.show_in_bot == True)
         records = await session.execute(stmt)
 
         return records.scalars().all()
