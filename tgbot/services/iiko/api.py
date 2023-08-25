@@ -158,6 +158,8 @@ class Iiko:
             'organizationId': organization_id
         }
 
+        print(payload)
+
         result = await self._post_request(url, payload)
         return schemas.Customer(**result)
 

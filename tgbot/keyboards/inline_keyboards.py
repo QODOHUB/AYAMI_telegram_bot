@@ -61,7 +61,7 @@ def get_product_keyboard(product: Product, cart_product: Cart | None):
                 callback_data='pass')
         )
         keyboard.row(
-            InlineKeyboardButton('🗑️', callback_data=callbacks.product.new(id=product.id, action='del')),
+            InlineKeyboardButton('❌', callback_data=callbacks.product.new(id=product.id, action='del')),
             InlineKeyboardButton('➖', callback_data=callbacks.product.new(id=product.id, action='-')),
             InlineKeyboardButton(str(cart_product.quantity), callback_data='pass'),
             InlineKeyboardButton('➕', callback_data=callbacks.product.new(id=product.id, action='+'))
@@ -89,7 +89,7 @@ def get_cart_keyboard(cart_products, current_product, product_num, total_sum):
                              callback_data='pass')
     )
     keyboard.row(
-        InlineKeyboardButton('🗑️', callback_data=callbacks.cart.new(id=cart_product.id, action='del')),
+        InlineKeyboardButton('❌', callback_data=callbacks.cart.new(id=cart_product.id, action='del')),
         InlineKeyboardButton('➖', callback_data=callbacks.cart.new(id=cart_product.id, action='-')),
         InlineKeyboardButton(str(quantity), callback_data='pass'),
         InlineKeyboardButton('➕', callback_data=callbacks.cart.new(id=cart_product.id, action='+'))

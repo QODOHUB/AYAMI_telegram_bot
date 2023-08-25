@@ -5,7 +5,7 @@ from aiogram.utils.exceptions import MessageNotModified
 
 from tgbot.keyboards import inline_keyboards
 from tgbot.misc import messages, callbacks
-from tgbot.services.database.models import Group, Product, TelegramUser, Cart
+from tgbot.services.database.models import Group, Product, TelegramUser, Cart, IikoUser
 from tgbot.services.utils import update_message_content, update_menu_from_api
 
 
@@ -32,7 +32,7 @@ async def show_subgroup_or_products(call: CallbackQuery, callback_data: dict):
             revision_products = filter(lambda product: product.revision == group.revision and product.show_in_bot, group.products)
             keyboard = inline_keyboards.get_products_keyboard(revision_products, group.parent_id)
 
-    await update_message_content(call, redis, text, keyboard, group.image_link)
+    await update_message_content(call, redis, text, keyboard, group.image_in_bot or group.image_link)
     await call.answer()
 
 
@@ -43,15 +43,14 @@ async def show_product(call: CallbackQuery, callback_data: dict):
 
     async with db() as session:
         revision = await update_menu_from_api(session, iiko, redis)
-        tg_user = await session.get(TelegramUser, call.from_user.id)
-        await session.refresh(tg_user, ['iiko_user'])
+        iiko_user = await IikoUser.get_by_telegram_id(session, call.from_user.id)
         product = await session.get(Product, callback_data['id'])
         if product.revision != revision:
             await call.answer(messages.old_menu, show_alert=True)
             return
 
         text = messages.product.format(name=product.name, description=product.description, price=product.price)
-        cart_product = await Cart.get_user_product(session, tg_user.iiko_user.id, callback_data['id'])
+        cart_product = await Cart.get_user_product(session, iiko_user.id, callback_data['id'])
         keyboard = inline_keyboards.get_product_keyboard(product, cart_product)
 
     await update_message_content(call, redis, text, keyboard, product.image_link)
@@ -61,31 +60,28 @@ async def show_product(call: CallbackQuery, callback_data: dict):
 async def add_to_cart(call: CallbackQuery, callback_data: dict):
     db = call.bot.get('database')
     async with db() as session:
-        tg_user = await session.get(TelegramUser, call.from_user.id)
+        iiko_user = await IikoUser.get_by_telegram_id(session, call.from_user.id)
         product = await session.get(Product, callback_data['id'])
-        await session.refresh(tg_user, ['iiko_user'])
-        cart_product = await Cart.get_user_product(session, tg_user.iiko_user.id, callback_data['id'])
+        cart_product = await Cart.get_user_product(session, iiko_user.id, callback_data['id'])
         if not cart_product:
-            await session.refresh(tg_user, ['iiko_user'])
-            cart_product = Cart(
-                iiko_user_id=tg_user.iiko_user.id,
+            new_cart_product = Cart(
+                iiko_user_id=iiko_user.id,
                 product_id=callback_data['id']
             )
-            session.add(cart_product)
+            session.add(new_cart_product)
             await session.commit()
 
-    await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, cart_product))
-    await call.answer()
+    await call.message.edit_reply_markup(inline_keyboards.get_product_keyboard(product, new_cart_product))
+    await call.answer('Товар добавлен в корзину!')
 
 
 async def get_and_check_cart_product(call: CallbackQuery, product_id, session):
     redis = call.bot.get('redis')
     iiko = call.bot.get('iiko')
     revision = await update_menu_from_api(session, iiko, redis)
-    tg_user = await session.get(TelegramUser, call.from_user.id)
+    iiko_user = await IikoUser.get_by_telegram_id(session, call.from_user.id)
     product = await session.get(Product, product_id)
-    await session.refresh(tg_user, ['iiko_user'])
-    cart_product = await Cart.get_user_product(session, tg_user.iiko_user.id, product_id)
+    cart_product = await Cart.get_user_product(session, iiko_user.id, product_id)
 
     if not cart_product:
         await call.answer(messages.old_cart_product, show_alert=True)

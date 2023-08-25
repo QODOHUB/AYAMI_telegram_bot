@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery, InputFile, InputMediaPhoto
 
 from tgbot.keyboards import inline_keyboards
 from tgbot.misc import messages, callbacks
-from tgbot.services.database.models import TelegramUser, Cart
+from tgbot.services.database.models import TelegramUser, Cart, IikoUser
 from tgbot.services.utils import update_message_content
 
 
@@ -148,6 +148,15 @@ async def start_order(call: CallbackQuery):
     else:
         if not(open_time < time.hour < 23):
             await call.answer(messages.working_time, show_alert=True)
+            return
+
+    db = call.bot.get('database')
+    async with db() as session:
+        iiko_user = await IikoUser.get_by_telegram_id(session, call.from_user.id)
+        await session.refresh(iiko_user, ['cart_products'])
+        if not iiko_user.cart_products:
+            await call.message.edit_text(messages.empty_cart, reply_markup=inline_keyboards.open_menu)
+            await call.answer('Корзина пуста!', show_alert=True)
             return
 
     if call.message.photo:

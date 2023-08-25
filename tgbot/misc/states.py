@@ -28,3 +28,7 @@ class ReserveTable(StatesGroup):
     waiting_for_date = State()
 
     finishing = State()
+
+
+class Mailing(StatesGroup):
+    waiting_for_message = State()

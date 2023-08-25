@@ -16,6 +16,7 @@ class Group(Base):
     name = Column(String(128))
     revision = Column(BigInteger)
     parent_id = Column(UUID, ForeignKey('product_group.id'), nullable=True)
+    image_in_bot = Column(String(255))
     show_in_bot = Column(Boolean, default=False)
 
     parent = relationship('Group', lazy='selectin', backref='children', remote_side='Group.id')
