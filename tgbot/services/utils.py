@@ -54,7 +54,8 @@ async def update_user_from_api(session, iiko: Iiko, user_id) -> IikoUser:
 
 
 async def update_menu_from_api(session, iiko, redis):
-    revision = int(await redis.get('revision'))
+    revision = await redis.get('revision')
+    revision = int(revision) if revision else None
 
     menu = await iiko.get_menu(start_revision=revision)
     if not menu.products:
